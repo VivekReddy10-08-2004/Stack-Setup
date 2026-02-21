@@ -66,6 +66,26 @@ sample-projects/
 - Linux installs may need `sudo`.
 - Package names can vary between distros.
 
+## How to use and test it
+
+```bash
+# Clone the repo
+git clone https://github.com/<you>/<repo>.git
+cd "<repo>/Stack Setup"
+
+# Run help and list profiles
+python src/installer.py --help
+python src/installer.py profiles
+
+# Safe test (no installs)
+python src/installer.py setup --profile fullstack --dry-run
+
+# Generate sample projects
+python src/installer.py init-samples --profile fullstack --output-dir "../sample-projects"
+```
+
+To install for real, run the same commands without `--dry-run`.
+
 ## Project layout
 
 - `src/installer.py` contains the CLI commands
