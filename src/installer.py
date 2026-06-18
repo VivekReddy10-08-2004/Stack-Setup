@@ -1,5 +1,43 @@
+"""Stack Setup installer CLI.
+
+Author: Vivek
+"""
+
 from pathlib import Path
 from enum import Enum
+import subprocess
+import sys
+
+
+def _ensure_dependencies() -> None:
+    """Keep the one-command setup friction-free on a clean machine.
+
+    Typer is the only third-party dependency. On a fresh Python install it
+    will be missing, which would crash with ModuleNotFoundError before setup
+    even begins. To honor the "install once, start coding" promise, install
+    it automatically the first time the CLI runs.
+    """
+    try:
+        import typer  # noqa: F401
+        return
+    except ModuleNotFoundError:
+        pass
+
+    print("First run: installing the CLI dependency (typer)...", flush=True)
+    requirements = Path(__file__).resolve().parent.parent / "requirements.txt"
+    target = ["-r", str(requirements)] if requirements.exists() else ["typer>=0.9.0"]
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", *target], check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print(
+            "Could not install 'typer' automatically.\n"
+            "Please run:  python -m pip install -r requirements.txt\n"
+            "then run this command again."
+        )
+        raise SystemExit(1)
+
+
+_ensure_dependencies()
 
 import typer
 

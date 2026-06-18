@@ -2,6 +2,10 @@
 
 Install your dev environment with sensible defaults so you can start coding immediately.
 
+Stack Setup is a cross-platform CLI that installs your core tools (VS Code, Python,
+Node.js, Java, C/C++), configures VS Code, and generates ready-to-run starter
+projects — all from a single command.
+
 ## Prerequisite (Required)
 
 Install the latest Python first:
@@ -20,6 +24,8 @@ If `python` is not recognized on Windows, try:
 py --version
 ```
 
+That is the only thing you install by hand. Everything else is handled for you.
+
 ## Fast Path (Recommended)
 
 From the `Stack Setup` folder, run:
@@ -34,6 +40,9 @@ That single command will, by default:
 - Install VS Code extensions for the stack
 - Apply safe VS Code settings
 - Generate starter projects in `sample-projects`
+
+The first run also installs the CLI's only dependency (Typer) automatically, so
+there is no extra setup step.
 
 ## Safe Preview Before Installing
 
@@ -91,6 +100,16 @@ Example:
 python src/installer.py setup --profile python
 ```
 
+## Dependencies
+
+The CLI needs Python plus one small library, **Typer**. You do not have to
+install it manually — the first command installs it for you. To install it
+ahead of time instead:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
 ## Platform Notes
 
 - Windows: uses `winget`, `choco`, or `scoop`
@@ -101,11 +120,12 @@ python src/installer.py setup --profile python
 
 ## Troubleshooting
 
-- `python` command not found: install Python and restart terminal
+- `python` command not found: install Python and restart your terminal
 - `code` command not found: enable "Shell Command: Install 'code' command in PATH" from VS Code
 - Unsupported package manager detected: install one of the supported package managers for your OS
 
 ## Project Files
 
-- `src/installer.py`: CLI entry point
-- `src/utils.py`: OS detection, package manager, and helper functions
+- `src/installer.py`: CLI entry point (profiles, install, VS Code config, samples)
+- `src/utils.py`: OS detection, package manager detection, and helper functions
+- `index.html`: landing page (deployed via Vercel)

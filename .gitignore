@@ -1,3 +1,9 @@
 .vercel
 __pycache__/
+*.pyc
 .claude/
+.venv/
+
+# Generated starter projects (recreated by `setup` / `init-samples`)
+sample-projects/
+src/sample-projects/
