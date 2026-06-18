@@ -5,6 +5,7 @@ Author: Vivek
 
 from pathlib import Path
 from enum import Enum
+from typing import Optional
 import subprocess
 import sys
 
@@ -179,6 +180,58 @@ DEFAULT_SETTINGS = {
 }
 
 
+# Friendly language menu shown by the interactive setup flow. Each entry maps a
+# human language name to an internal profile.
+LANGUAGE_MENU: list[tuple[str, str]] = [
+    ("python", "Python"),
+    ("web", "JavaScript / Node.js"),
+    ("java", "Java"),
+    ("cpp", "C / C++"),
+    ("fullstack", "Everything (all of the above)"),
+]
+
+_LANGUAGE_ALIASES = {
+    "javascript": "web",
+    "js": "web",
+    "node": "web",
+    "nodejs": "web",
+    "c": "cpp",
+    "c++": "cpp",
+    "all": "fullstack",
+}
+
+
+def _prompt_for_profile() -> str:
+    """Ask the user which language to set up and return the chosen profile."""
+    typer.echo("Which language do you want to set up?")
+    for index, (_, label) in enumerate(LANGUAGE_MENU, start=1):
+        typer.echo(f"  {index}. {label}")
+
+    while True:
+        answer = typer.prompt("Enter a number or language name", default="1").strip().lower()
+        if answer.isdigit():
+            position = int(answer)
+            if 1 <= position <= len(LANGUAGE_MENU):
+                return LANGUAGE_MENU[position - 1][0]
+        else:
+            for profile_name, _ in LANGUAGE_MENU:
+                if answer == profile_name:
+                    return profile_name
+            if answer in _LANGUAGE_ALIASES:
+                return _LANGUAGE_ALIASES[answer]
+        typer.echo("Please choose one of the listed numbers or language names.")
+
+
+def _resolve_profile(profile: Optional[Profile]) -> str:
+    """Use the explicit profile if given, otherwise prompt (or default safely)."""
+    if profile is not None:
+        return profile.value
+    if sys.stdin.isatty():
+        return _prompt_for_profile()
+    typer.echo("No language specified; defaulting to Python. Use --profile to choose another.")
+    return Profile.python.value
+
+
 def _profile_components(profile: str) -> list[str]:
     if profile not in PROFILE_TO_COMPONENTS:
         raise typer.BadParameter(
@@ -230,22 +283,67 @@ def _configure_vscode_settings() -> None:
 
 
 def _create_python_sample(project_root: Path) -> None:
+    app_dir = project_root / "python-app"
     write_file(
-        project_root / "python-app" / "app.py",
+        app_dir / "app.py",
         "def main():\n    print(\"Hello from Python starter\")\n\n\nif __name__ == '__main__':\n    main()\n",
     )
-    write_file(project_root / "python-app" / "requirements.txt", "pytest\n")
-    write_file(project_root / "python-app" / "README.md", "# Python Starter\n\nRun: `python app.py`\n")
+    write_file(app_dir / "requirements.txt", "pytest\n")
+    write_file(
+        app_dir / ".vscode" / "launch.json",
+        """{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run / Debug app.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/app.py",
+      "console": "integratedTerminal"
+    }
+  ]
+}
+""",
+    )
+    write_file(
+        app_dir / "README.md",
+        "# Python Starter\n\n"
+        "Open this folder in VS Code and press **F5** to run and debug.\n\n"
+        "Or run it from a terminal:\n\n```bash\npython app.py\n```\n",
+    )
 
 
 def _create_node_sample(project_root: Path) -> None:
+    app_dir = project_root / "node-app"
     write_file(
-        project_root / "node-app" / "package.json",
+        app_dir / "package.json",
         '{\n  "name": "node-starter",\n  "version": "1.0.0",\n  "private": true,\n  "type": "module",\n  "scripts": {\n    "start": "node src/index.js"\n  }\n}\n',
     )
     write_file(
-        project_root / "node-app" / "src" / "index.js",
+        app_dir / "src" / "index.js",
         "console.log('Hello from Node.js starter');\n",
+    )
+    write_file(
+        app_dir / ".vscode" / "launch.json",
+        """{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run / Debug index.js",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/index.js",
+      "console": "integratedTerminal"
+    }
+  ]
+}
+""",
+    )
+    write_file(
+        app_dir / "README.md",
+        "# Node.js Starter\n\n"
+        "Open this folder in VS Code and press **F5** to run and debug.\n\n"
+        "Or run it from a terminal:\n\n```bash\nnpm start\n```\n",
     )
 
 
@@ -258,6 +356,27 @@ def _create_java_sample(project_root: Path) -> None:
         project_root / "java-app" / "src" / "main" / "java" / "App.java",
         "public class App {\n    public static void main(String[] args) {\n        System.out.println(\"Hello from Java starter\");\n    }\n}\n",
     )
+    write_file(
+        project_root / "java-app" / ".vscode" / "launch.json",
+        """{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run / Debug App",
+      "type": "java",
+      "request": "launch",
+      "mainClass": "App"
+    }
+  ]
+}
+""",
+    )
+    write_file(
+        project_root / "java-app" / "README.md",
+        "# Java Starter\n\n"
+        "Open this folder in VS Code (with the Java extension pack) and press "
+        "**F5** to run and debug, or use the **Run** lens above `main`.\n",
+    )
 
 
 def _create_cpp_sample(project_root: Path) -> None:
@@ -268,6 +387,59 @@ def _create_cpp_sample(project_root: Path) -> None:
     write_file(
         project_root / "cpp-app" / "CMakeLists.txt",
         "cmake_minimum_required(VERSION 3.16)\nproject(cpp_starter)\nset(CMAKE_CXX_STANDARD 17)\nadd_executable(cpp_starter main.cpp)\n",
+    )
+    write_file(
+        project_root / "cpp-app" / ".vscode" / "tasks.json",
+        """{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "cmake-configure",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["-S", ".", "-B", "build"]
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "build"],
+      "dependsOn": "cmake-configure",
+      "group": { "kind": "build", "isDefault": true }
+    }
+  ]
+}
+""",
+    )
+    write_file(
+        project_root / "cpp-app" / ".vscode" / "launch.json",
+        """{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run / Debug (build first)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/cpp_starter",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "build",
+      "externalConsole": false
+    }
+  ]
+}
+""",
+    )
+    write_file(
+        project_root / "cpp-app" / "README.md",
+        "# C/C++ Starter\n\n"
+        "Open this folder in VS Code (with the C/C++ extension) and press "
+        "**F5** to build and debug.\n\n"
+        "Or build and run from a terminal:\n\n"
+        "```bash\ncmake -S . -B build\ncmake --build build\n./build/cpp_starter\n```\n\n"
+        "Note: on Windows the binary is `build\\\\cpp_starter.exe` (or "
+        "`build\\\\Debug\\\\cpp_starter.exe`). If the debug config doesn't match "
+        "your compiler, run **Run > Add Configuration** and pick C/C++.\n",
     )
 
 
@@ -322,15 +494,15 @@ def init_samples(
 
 @app.command("setup")
 def setup(
-    profile: Profile = typer.Option(Profile.fullstack, help="Environment profile to apply"),
+    profile: Optional[Profile] = typer.Option(None, help="Language to set up; prompts if omitted"),
     output_dir: str = typer.Option("sample-projects", help="Directory to create sample projects in"),
     dry_run: bool = typer.Option(False, help="Print commands without executing install/configure steps"),
     skip_install: bool = typer.Option(False, help="Skip package installations"),
     skip_vscode: bool = typer.Option(False, help="Skip VS Code setup"),
     skip_samples: bool = typer.Option(False, help="Skip sample project generation"),
 ) -> None:
-    profile_name = profile.value
-    typer.echo(f"Applying profile: {profile_name}")
+    profile_name = _resolve_profile(profile)
+    typer.echo(f"Setting up: {profile_name}")
 
     if not skip_install:
         _install_components(profile_name, dry_run=dry_run)

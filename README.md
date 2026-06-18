@@ -34,15 +34,33 @@ From the `Stack Setup` folder, run:
 python src/installer.py setup
 ```
 
-That single command will, by default:
+Stack Setup asks which language you want:
 
-- Install core tools (VS Code, Python, Node.js, Java, C/C++)
-- Install VS Code extensions for the stack
+```text
+Which language do you want to set up?
+  1. Python
+  2. JavaScript / Node.js
+  3. Java
+  4. C / C++
+  5. Everything (all of the above)
+```
+
+Pick one, and that single command will:
+
+- Install that language's tools (and VS Code)
+- Install the matching VS Code extensions
 - Apply safe VS Code settings
-- Generate starter projects in `sample-projects`
+- Generate a ready-to-run, debuggable starter project in `sample-projects`
+
+Open the generated project folder in VS Code and press **F5** to run and debug.
 
 The first run also installs the CLI's only dependency (Typer) automatically, so
-there is no extra setup step.
+there is no extra setup step. To skip the prompt (for scripts), pass the
+language directly:
+
+```bash
+python src/installer.py setup --profile python
+```
 
 ## Safe Preview Before Installing
 
@@ -54,15 +72,20 @@ python src/installer.py setup --dry-run
 
 ## What You Get
 
-After setup, starter apps are created under:
+After setup, a starter app for your chosen language is created under
+`sample-projects/`. Each starter includes a `.vscode/` debug config so you can
+press **F5** to run and debug immediately. For example, choosing Python creates:
 
 ```text
 sample-projects/
   python-app/
-  node-app/
-  java-app/
-  cpp-app/
+    app.py
+    requirements.txt
+    .vscode/launch.json
 ```
+
+Choosing "Everything" creates `python-app/`, `node-app/`, `java-app/`, and
+`cpp-app/`.
 
 ## Common Commands
 
