@@ -8,7 +8,8 @@ projects — all from a single command.
 
 ## Prerequisite (Required)
 
-Install the latest Python first:
+Install Python first — Stack Setup is a Python program, so it needs Python to
+run itself:
 
 - https://www.python.org/downloads/
 
@@ -25,6 +26,8 @@ py --version
 ```
 
 That is the only thing you install by hand. Everything else is handled for you.
+Stack Setup detects tools you already have (including this Python) and **skips
+them**, so it never installs a second copy and is always safe to re-run.
 
 ## Fast Path (Recommended)
 
@@ -132,6 +135,23 @@ ahead of time instead:
 ```bash
 python -m pip install -r requirements.txt
 ```
+
+## Versions Stack Setup Installs
+
+The goal is a stable, well-supported setup you don't have to think about — the
+versions most tutorials and courses assume:
+
+| Tool | Version it targets |
+| --- | --- |
+| Python | Latest stable (3.13 on Windows; your package manager's current Python elsewhere) |
+| Node.js | Active **LTS** line (the most stable choice) |
+| Java | **21 LTS** (Eclipse Temurin) |
+| C/C++ | Current stable toolchain (LLVM/Clang on Windows/macOS, GCC on Linux) |
+| VS Code | Latest stable |
+
+On Windows these versions are pinned exactly. On macOS and Linux the package
+manager provides its current stable equivalent. Anything already installed is
+detected and skipped, so re-running is safe.
 
 ## Platform Notes
 

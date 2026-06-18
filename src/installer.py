@@ -73,6 +73,35 @@ PROFILE_TO_COMPONENTS: dict[str, list[str]] = {
     "fullstack": ["vscode", "python", "node", "java", "cpp"],
 }
 
+# Version policy: target the most stable, well-supported release of each tool so
+# beginners and students never have to think about versions.
+#   - Python : a recent stable release (3.13); skipped entirely if Python is
+#              already installed (it has to be, to run this CLI)
+#   - Node   : the active LTS line (most stable)
+#   - Java   : the current LTS (21), the version most tutorials assume
+#   - C/C++  : the platform's current stable toolchain (LLVM/Clang or GCC)
+# On Windows the IDs below pin these exact lines. On macOS/Linux the package
+# manager supplies its current stable equivalent.
+COMPONENT_VERSION_LABELS: dict[str, str] = {
+    "vscode": "VS Code (latest stable)",
+    "python": "Python (latest stable)",
+    "node": "Node.js (LTS)",
+    "java": "Java (21 LTS)",
+    "cpp": "C/C++ toolchain (stable)",
+    "cmake": "CMake (latest stable)",
+}
+
+# Commands that indicate a component is already installed. If any is found, the
+# component is skipped so re-running setup is safe and no second copy is added.
+COMPONENT_PROBES: dict[str, list[str]] = {
+    "vscode": ["code"],
+    "python": ["python", "python3", "py"],
+    "node": ["node"],
+    "java": ["javac"],
+    "cpp": ["clang++", "g++", "cl"],
+    "cmake": ["cmake"],
+}
+
 PACKAGE_MAP: dict[str, dict[str, str]] = {
     "vscode": {
         "winget": "Microsoft.VisualStudioCode",
@@ -86,7 +115,7 @@ PACKAGE_MAP: dict[str, dict[str, str]] = {
         "zypper": "code",
     },
     "python": {
-        "winget": "Python.Python.3.12",
+        "winget": "Python.Python.3.13",
         "choco": "python",
         "scoop": "python",
         "brew": "python",
@@ -243,6 +272,11 @@ def _profile_components(profile: str) -> list[str]:
     return components
 
 
+def _already_installed(component: str) -> bool:
+    """True if the component is already available, so it can be skipped."""
+    return any(command_exists(probe) for probe in COMPONENT_PROBES.get(component, []))
+
+
 def _install_components(profile: str, dry_run: bool = False) -> None:
     os_name = detect_os()
     package_manager = detect_package_manager(os_name)
@@ -254,13 +288,19 @@ def _install_components(profile: str, dry_run: bool = False) -> None:
     typer.echo(f"Using package manager: {package_manager}")
 
     for component in _profile_components(profile):
+        label = COMPONENT_VERSION_LABELS.get(component, component)
+
+        if _already_installed(component):
+            typer.echo(f"Skipping {label}: already installed.")
+            continue
+
         package_name = PACKAGE_MAP.get(component, {}).get(package_manager)
         if not package_name:
             typer.echo(f"Skipping {component}: no package mapping for {package_manager}")
             continue
 
         install_command = build_install_command(package_manager, package_name)
-        typer.echo(f"Installing {component}: {' '.join(install_command)}")
+        typer.echo(f"Installing {label}: {' '.join(install_command)}")
         run_command(install_command, dry_run=dry_run)
 
 
