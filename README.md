@@ -1,174 +1,203 @@
-# Stack Setup
+# Dev Environment Enabler
+ 
+## What this project is about
 
-Install your dev environment with sensible defaults so you can start coding immediately.
+This project is a **cross-platform CLI tool** that helps new developers set up a coding environment quickly.
 
-Stack Setup is a cross-platform CLI that installs your core tools (VS Code, Python,
-Node.js, Java, C/C++), configures VS Code, and generates ready-to-run starter
-projects — all from a single command.
+Instead of manually installing everything one by one, the CLI can:
+- install core tools (VS Code, Python, Java, C/C++, Node.js)
+- configure VS Code with useful extensions and settings
+- generate starter sample projects you can run immediately
 
-## Prerequisite (Required)
+The main goal is to reduce setup time and remove confusion for beginners.
 
-Install Python first — Stack Setup is a Python program, so it needs Python to
-run itself:
+---
 
-- https://www.python.org/downloads/
+## The big idea in simple words
 
-Then verify Python is available:
+When someone joins a project, they often ask:
+- Which tools do I need?
+- Which versions should I install?
+- Which VS Code extensions should I use?
+- How do I know my environment works?
 
-```bash
-python --version
-```
+This tool answers those questions with one workflow:
+1. Choose a profile (python/web/java/cpp/fullstack)
+2. Run setup command
+3. Let the script install, configure, and create examples
 
-If `python` is not recognized on Windows, try:
+---
 
-```bash
-py --version
-```
+## Project structure (what is where)
 
-That is the only thing you install by hand. Everything else is handled for you.
-Stack Setup detects tools you already have (including this Python) and **skips
-them**, so it never installs a second copy and is always safe to re-run.
+- `src/installer.py`
+  - Main CLI entrypoint (commands users run)
+  - Profile definitions (what each profile installs)
+  - Package + extension mappings
+  - Setup workflow orchestration
+  - Sample project generation
 
-## Fast Path (Recommended)
+- `src/utils.py`
+  - Reusable helper functions
+  - OS detection and package manager detection
+  - Command execution wrapper
+  - VS Code settings path resolution
+  - JSON settings merge and safe file writes
 
-From the `Stack Setup` folder, run:
+- `generated-samples/` and `generated-samples-dry/`
+  - Output folders created during command tests
+  - Contain starter apps for selected profile languages
 
-```bash
-python src/installer.py setup
-```
+---
 
-Stack Setup asks which language you want:
+## Why these technical decisions were made
 
-```text
-Which language do you want to set up?
-  1. Python
-  2. JavaScript / Node.js
-  3. Java
-  4. C / C++
-  5. Everything (all of the above)
-```
+### 1) Python + Typer for the CLI
+**Decision:** Use Python with the Typer library.
 
-Pick one, and that single command will:
+**Why:**
+- Easy to read and maintain
+- Fast to build command-based tools
+- Type hints and command help are built in
+- Good fit for automation scripting
 
-- Install that language's tools (and VS Code)
-- Install the matching VS Code extensions
-- Apply safe VS Code settings
-- Generate a ready-to-run, debuggable starter project in `sample-projects`
+### 2) Profile-based setup
+**Decision:** Support profiles: `base`, `python`, `web`, `java`, `cpp`, `fullstack`.
 
-Open the generated project folder in VS Code and press **F5** to run and debug.
+**Why:**
+- New users think in roles/stacks, not package names
+- One profile command can install a meaningful group of tools
+- Easier to extend later (add new profiles)
 
-The first run also installs the CLI's only dependency (Typer) automatically, so
-there is no extra setup step. To skip the prompt (for scripts), pass the
-language directly:
+### 3) OS-aware package manager strategy
+**Decision:** Detect OS and available package manager first, then map each tool to the correct package name.
 
-```bash
-python src/installer.py setup --profile python
-```
+**Why:**
+- Package names differ by platform and manager
+- Keeps one CLI command usable across Windows/macOS/Linux
+- Avoids hardcoding one OS-specific flow
 
-## Safe Preview Before Installing
+### 4) Separate tool installation from VS Code configuration
+**Decision:** Keep installation and editor setup as separate internal steps and commands.
 
-To preview commands without making changes:
+**Why:**
+- Better modularity (install only, configure only, or full setup)
+- Easier debugging when one step fails
+- More flexible for future CI automation
 
-```bash
-python src/installer.py setup --dry-run
-```
+### 5) Dry-run mode
+**Decision:** Add `--dry-run` option for installation/configuration commands.
 
-## What You Get
+**Why:**
+- Lets users preview actions safely
+- Useful in demos and onboarding docs
+- Reduces risk before making system changes
 
-After setup, a starter app for your chosen language is created under
-`sample-projects/`. Each starter includes a `.vscode/` debug config so you can
-press **F5** to run and debug immediately. For example, choosing Python creates:
+### 6) Generate starter projects automatically
+**Decision:** Create simple runnable sample projects for installed stacks.
 
-```text
-sample-projects/
-  python-app/
-    app.py
-    requirements.txt
-    .vscode/launch.json
-```
+**Why:**
+- Confirms environment works right away
+- Gives beginners a known-good starting point
+- Reduces “it installed but what now?” confusion
 
-Choosing "Everything" creates `python-app/`, `node-app/`, `java-app/`, and
-`cpp-app/`.
+### 7) Non-destructive file writes for samples
+**Decision:** Sample file helper does not overwrite existing files by default.
 
-## Common Commands
+**Why:**
+- Prevents accidental data loss
+- Safer for repeated runs
 
-```bash
-# Show CLI help
-python src/installer.py --help
+### 8) Enum-based profile options
+**Decision:** Use `Enum` for profile CLI options.
 
-# Show available profiles
-python src/installer.py profiles
+**Why:**
+- Works reliably with the current Typer version in this environment
+- Gives safer, validated inputs
 
-# Install packages only
-python src/installer.py install --profile fullstack
+---
 
-# Configure VS Code only
-python src/installer.py configure-vscode --profile fullstack
+![alt text](Stack_setup_flow.png)
 
-# Generate sample projects only
-python src/installer.py init-samples --profile fullstack --output-dir "sample-projects"
-```
+## Commands you can run
 
-## Optional Profiles
-
-If you want a smaller setup, use `--profile`:
-
-- `base`
-- `python`
-- `web`
-- `java`
-- `cpp`
-- `fullstack` (default)
-
-Example:
-
-```bash
-python src/installer.py setup --profile python
-```
-
-## Dependencies
-
-The CLI needs Python plus one small library, **Typer**. You do not have to
-install it manually — the first command installs it for you. To install it
-ahead of time instead:
+From the `src` folder:
 
 ```bash
-python -m pip install -r requirements.txt
+python installer.py --help
+python installer.py profiles
+python installer.py install --profile fullstack --dry-run
+python installer.py configure-vscode --profile python --dry-run
+python installer.py init-samples --profile fullstack --output-dir "..\\sample-projects"
+python installer.py setup --profile fullstack --dry-run --output-dir "..\\sample-projects"
 ```
 
-## Versions Stack Setup Installs
+For real installation, remove `--dry-run`.
 
-The goal is a stable, well-supported setup you don't have to think about — the
-versions most tutorials and courses assume:
+---
 
-| Tool | Version it targets |
-| --- | --- |
-| Python | Latest stable (3.13 on Windows; your package manager's current Python elsewhere) |
-| Node.js | Active **LTS** line (the most stable choice) |
-| Java | **21 LTS** (Eclipse Temurin) |
-| C/C++ | Current stable toolchain (LLVM/Clang on Windows/macOS, GCC on Linux) |
-| VS Code | Latest stable |
+## What each command does
 
-On Windows these versions are pinned exactly. On macOS and Linux the package
-manager provides its current stable equivalent. Anything already installed is
-detected and skipped, so re-running is safe.
+- `profiles`
+  - Lists available environment profiles.
 
-## Platform Notes
+- `install`
+  - Installs profile components using detected package manager.
 
-- Windows: uses `winget`, `choco`, or `scoop`
-- macOS: uses `brew`
-- Linux: uses `apt`, `dnf`, `yum`, `pacman`, or `zypper`
-- VS Code extension install requires `code` in PATH
-- Linux installs may require `sudo`
+- `configure-vscode`
+  - Installs profile-specific VS Code extensions.
+  - Applies default editor settings (when not in dry-run).
 
-## Troubleshooting
+- `init-samples`
+  - Creates starter apps for languages in the selected profile.
 
-- `python` command not found: install Python and restart your terminal
-- `code` command not found: enable "Shell Command: Install 'code' command in PATH" from VS Code
-- Unsupported package manager detected: install one of the supported package managers for your OS
+- `setup`
+  - End-to-end workflow (install + VS Code config + sample generation).
 
-## Project Files
+---
 
-- `src/installer.py`: CLI entry point (profiles, install, VS Code config, samples)
-- `src/utils.py`: OS detection, package manager detection, and helper functions
-- `index.html`: landing page (deployed via Vercel)
+## Current scope vs future scope
+
+### Current scope (MVP)
+- Cross-platform package-manager-aware install flow
+- VS Code extension + settings automation
+- Profile-based setup
+- Starter project generation
+- Dry-run safety mode
+
+### Good next improvements
+- Add dependency detection from project files (`package.json`, `requirements.txt`, `pom.xml`)
+- Add tool/version verification and health checks
+- Add rollback/cleanup on failed install
+- Add custom profile config file support
+- Add automated tests for mapping and command behavior
+
+---
+
+## How to read this code to catch up quickly
+
+1. Start in `src/installer.py`:
+   - Look at `PROFILE_TO_COMPONENTS`, `PACKAGE_MAP`, `PROFILE_EXTENSIONS`
+   - Then read commands in order: `profiles`, `install`, `configure-vscode`, `init-samples`, `setup`
+
+2. Move to `src/utils.py`:
+   - Understand OS and package manager detection
+   - Understand how commands are built and executed
+   - Understand how VS Code settings are merged safely
+
+3. Run a dry-run command and compare output with code flow:
+   - This makes architecture very clear in practice
+
+---
+
+## Important practical notes
+
+- Some Linux package names or repositories may need adjustment depending on distro setup.
+- VS Code extension install requires `code` CLI available in PATH.
+- System package installation may require admin/sudo permissions.
+
+---
+
+## One-sentence summary
+
+This project is an onboarding automation tool: it turns manual environment setup into a repeatable, profile-driven CLI workflow that installs tools, configures VS Code, and creates runnable starter projects.
