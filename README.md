@@ -116,8 +116,7 @@ This tool answers those questions with one workflow:
 - Gives safer, validated inputs
 
 ---
-
-![alt text](Stack_setup_flow.png)
+![workflow Image](Stack_setup_flow.png)
 
 ## Commands you can run
 
